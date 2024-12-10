@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venta en Caja</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .producto { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .producto img { max-width: 100px; display: block; margin-bottom: 10px; }
+        .botones { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Venta en Caja</h1>
+    <div id="ventaencaja-container"></div>
+
+    <button id="comprar-todo" style="margin-top: 20px;">Comprar Todo</button>
+
+    <script>
+        const idAsignado = "usuario_123"; // Ejemplo de ID asignado, este valor puede ser dinámico.
+
+        // Cargar productos de la tabla `ventaencaja`
+        const cargarVenta = async () => {
+            try {
+                const response = await fetch(`/leer-ventaencaja?id_asignado=${idAsignado}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    const container = document.getElementById('ventaencaja-container');
+                    container.innerHTML = '';
+
+                    if (data.venta.length === 0) {
+                        container.innerHTML = '<p>No hay productos en la venta en caja.</p>';
+                        return;
+                    }
+
+                    data.venta.forEach(item => {
+                        const div = document.createElement('div');
+                        div.classList.add('producto');
+                        div.innerHTML = `
+                            <img src="${item.imagen_producto}" alt="${item.nombre_producto}">
+                            <p><strong>${item.nombre_producto}</strong></p>
+                            <p>Precio: $${item.precio_producto}</p>
+                            <p>Cantidad: ${item.cantidad_producto}</p>
+                            <p>Total: $${item.total}</p>
+                            <div class="botones">
+                                <button onclick="actualizarVenta('${item.id_producto}', ${item.cantidad_producto - 1})">-</button>
+                                <button onclick="actualizarVenta('${item.id_producto}', ${item.cantidad_producto + 1})">+</button>
+                                <button onclick="eliminarDeVenta('${item.id_producto}')">Eliminar</button>
+                            </div>
+                        `;
+                        container.appendChild(div);
+                    });
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                console.error('Error al cargar la venta:', error);
+            }
+        };
+
+        // Actualizar cantidad en la tabla `ventaencaja`
+        const actualizarVenta = async (id_producto, cantidad) => {
+            if (cantidad < 0) return; // No permitir cantidades negativas.
+
+            try {
+                const response = await fetch(`/ventaencaja/${id_producto}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cantidad_producto: cantidad, id_asignado: idAsignado }),
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.message);
+                    cargarVenta();
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                console.error('Error al actualizar venta:', error);
+            }
+        };
+
+        // Eliminar producto de la tabla `ventaencaja`
+        const eliminarDeVenta = async (id_producto) => {
+            actualizarVenta(id_producto, 0); // Establecer cantidad a 0 para eliminar.
+        };
+
+        // Comprar todos los productos
+        const comprarTodo = async () => {
+            try {
+                const response = await fetch('/comprar-todo-ventaencaja', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_asignado: idAsignado }),
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.message);
+                    cargarVenta();
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                console.error('Error al realizar la compra:', error);
+            }
+        };
+
+        // Event Listener para el botón "Comprar Todo"
+        document.getElementById('comprar-todo').addEventListener('click', comprarTodo);
+
+        // Cargar productos de venta al cargar la página
+        cargarVenta();
+    </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redireccionador</title>
+</head>
+<body>
+    <script>
+         async function redirigirSegunRango() {
+            try {
+                const response = await fetch('/api/get-rango'); 
+                if (!response.ok) {
+                    throw new Error('Error en la solicitud: ' + response.statusText);
+                }
+
+                const data = await response.json();
+                const rango = parseInt(data.rango, 10);
+
+                if (rango === 1) {
+                    window.location.href = "/homeuser";
+                } else if (rango === 2) {
+                    window.location.href = "/homeADMIN";
+                } else {
+                    window.location.href = "/home";
+                }
+            } catch (error) {
+                console.error('Error al obtener el rango:', error);
+                window.location.href = "/home";
+            }
+        }
+
+        redirigirSegunRango();
+    </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redireccionador</title>
+</head>
+<body>
+    <script>
+       async function redirigirSegunRango() {
+            try {
+                const response = await fetch('/api/get-rango'); // Cambia esta ruta según tu backend
+                if (!response.ok) {
+                    throw new Error('Error en la solicitud: ' + response.statusText);
+                }
+
+                const data = await response.json();
+                const rango = parseInt(data.rango, 10);
+
+                if (rango === 1 || rango === 2) {
+                    window.location.href = "/sesionuser";
+                } else {
+                    window.location.href = "/login";
+                }
+            } catch (error) {
+                console.error('Error al obtener el rango:', error);
+                window.location.href = "/login";
+            }
+        }
+
+        redirigirSegunRango();
+    </script>
+</body>
+</html>

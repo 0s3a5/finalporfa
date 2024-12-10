@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalles del Producto</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    .product-container {
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 5px;
+    }
+    .product-title {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    .product-price {
+      color: #e91e63;
+      font-size: 20px;
+      margin-bottom: 15px;
+    }
+    .product-description {
+      margin-bottom: 20px;
+    }
+    .button {
+      display: inline-block;
+      background-color: #007BFF;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="product-container" id="producto"></div>
+  <form id="carritoForm">
+    <label for="cantidad_producto">Cantidad:</label>
+    <input type="number" id="cantidad_producto" name="cantidad_producto" min="1" value="1">
+    <button type="button" class="button" id="addToCartButton">Añadir al carrito</button>
+  </form>
+
+  <script>
+    // Obtener el ID del producto desde la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('paginaid'); // ID del producto en la URL
+
+    // Función para cargar los detalles del producto
+    async function cargarProducto() {
+      try {
+        const response = await fetch(`/api/producto?paginaid=${id}`);
+        const producto = await response.json();
+
+        if (response.ok) {
+          // Mostrar los detalles del producto en el DOM
+          const productoDiv = document.getElementById('producto');
+          productoDiv.innerHTML = `
+            <h1 class="product-title">${producto.nombre}</h1>
+            <img src="${producto.link_imagen}" alt="${producto.nombre}">
+            <p class="product-price">Precio: $${producto.precio}</p>
+            <p class="product-description">${producto.descripcion}</p>
+            <p>Cantidad disponible: ${producto.cantidad}</p>
+          `;
+
+          // Guardar el ID del producto en el formulario
+          document.getElementById('carritoForm').dataset.idProducto = producto.id_producto;
+        } else {
+          alert(producto.error || "Error al cargar el producto.");
+        }
+      } catch (error) {
+        console.error("Error al cargar el producto:", error);
+        alert("Ocurrió un error al cargar el producto. Intenta nuevamente.");
+      }
+    }
+
+    // Función para añadir el producto al carrito
+    async function añadirAlCarrito() {
+  const form = document.getElementById('carritoForm');
+  const idProducto = form.dataset.idProducto;
+  const nombreProducto = document.getElementById('producto').querySelector('.product-title').innerText;
+  const precioProducto = parseFloat(document.getElementById('producto').querySelector('.product-price').innerText.replace('Precio: $', ''));
+  const imagenProducto = document.getElementById('producto').querySelector('img').src;
+  const cantidadProducto = document.getElementById('cantidad_producto').value;
+
+  if (!idProducto || !nombreProducto || !imagenProducto || isNaN(precioProducto) || isNaN(cantidadProducto)) {
+    alert("Por favor, verifica que todos los datos sean válidos.");
+    return;
+  }
+
+  try {
+    // Obtener el ID del usuario
+    const userId = await obtenerUserId();
+    if (!userId) {
+      alert('No se pudo obtener el ID de usuario. Inicia sesión nuevamente.');
+      return;
+    }
+
+    const response = await fetch('/add-to-ventaencaja', {
+   method: 'POST',
+   headers: {
+     'Content-Type': 'application/json',
+   },
+   body: JSON.stringify({
+     id_producto: idProducto,
+     nombre_producto: nombreProducto,
+     cantidad_producto: parseInt(cantidadProducto, 10),
+     precio_producto: precioProducto,
+     imagen_producto: imagenProducto,
+     id_asignado: userId, // Usando el ID real del usuario obtenido previamente
+   }),
+ });
+
+    if (response.ok) {
+      alert("Producto añadido al carrito con éxito.");
+      window.location.href = '/carrito';
+    } else {
+      const errorData = await response.json();
+      console.error('Error recibido del backend:', errorData);
+      alert(`Error al añadir al carrito: ${errorData.error || "Error desconocido"}`);
+    }
+  } catch (error) {
+    console.error("Error al añadir al carrito:", error);
+    alert("Hubo un problema al añadir el producto al carrito. Inténtalo de nuevo.");
+  }
+}
+
+    document.getElementById('addToCartButton').addEventListener('click', añadirAlCarrito);
+
+    // Cargar los detalles del producto al cargar la página
+    cargarProducto();
+  </script>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Arma</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        form {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <form id="editProductForm">
+        <h1>Editar Producto</h1>
+        <label for="id">ingrese id:</label>
+        <input type="number" id="id" name="id">
+
+        <label for="nombre">Nombre:</label>
+        <input type="text" id="nombre" name="nombre" required>
+
+        <label for="descripcion">descripcion:</label>
+        <input type="text" id="descripcion" name="descripcion" required>
+
+        <label for="precio">Precio:</label>
+        <input type="number" id="precio" name="precio" step="0.01" required>
+
+        <label for="cantidad">Stock:</label>
+        <input type="number" id="cantidad" name="cantidad" required>
+
+        <label for="image_url">URL de Imagen:</label>
+        <input type="text" id="link_imagen" name="link_imagen" required>
+
+        <button type="button" id="submitEdit">Guardar Cambios</button>
+    </form>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const productId = params.get('id');
+        const form = document.getElementById('editProductForm');
+
+        // Cargar datos del producto
+        async function loadProductDetails(id) {
+            try {
+                const response = await fetch(`/producto/${id}`);
+                if (!response.ok) {
+                    throw new Error('Error al cargar el producto');
+                }
+                const product = await response.json();
+                document.getElementById('id').value = product.id;
+                document.getElementById('nombre').value = product.nombre;
+                document.getElementById('descripcion').value = product.descripcion;
+                document.getElementById('precio').value = product.precio;
+                document.getElementById('cantidad').value = product.cantidad;
+                document.getElementById('link_imagen').value = product.link_imagen;
+            } catch (error) {
+                console.error('Error al cargar los detalles del producto:', error);
+                alert('Hubo un problema al cargar los detalles del producto.');
+            }
+        }
+
+        if (productId) {
+            loadProductDetails(productId);
+        } else {
+            alert("ID de producto no proporcionado.");
+        }
+
+        // Actualizar producto
+        document.getElementById('submitEdit').addEventListener('click', async () => {
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            const id = data.id;
+
+            try {
+                const response = await fetch(`/producto/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        nombre: data.nombre,
+                        descripcion: data.descripcion,
+                        precio: parseFloat(data.precio),
+                        cantidad: parseInt(data.cantidad, 10),
+                        link_imagen: data.link_imagen,
+                    }),
+                });
+
+                if (response.ok) {
+                    alert('Producto actualizado con éxito.');
+                    window.location.href = 'homeADMIN'; // Redirigir a la lista de productos
+                } else {
+                    const error = await response.json();
+                    alert('Error al actualizar el producto: ' + (error.message || 'Desconocido'));
+                }
+            } catch (error) {
+                console.error('Error al actualizar el producto:', error);
+                alert('Hubo un problema al actualizar el producto.');
+            }
+        });
+    </script>
+</body>
+</html>
